@@ -8,68 +8,81 @@ export default function Breakout() {
 
     useEffect(() => {
         const canvas = canvasRef.current; // dostaneme skutečný <canvas> element
-        
+
         if (!canvas) return; //ukončit, kdyby canvas z nějakého důvodu neexistoval
 
         const ctx = canvas.getContext("2d"); // získáme 2D kreslicí kontext
 
-        if (!ctx) return; // ukončit, kdyby se kontext nepodařilo získat
+        if (!ctx) return; // ukončit, kdyby se kontext nepodařilo získat, kvůli TS narrowiungu do fncí zbytežné a potřeba znova definovat
 
-        const gradient = ctx.createLinearGradient(100, 100, 200, 130);
-        gradient.addColorStop(0, "#7bd6eb");
-        gradient.addColorStop(1, "#88f97c");
 
-        
-        // 1. Brick cihla
-        ctx.save(); //uloží aktuální nastavení ctx
-        ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
-        ctx.fillStyle = gradient;
+        //Funkce pro následné vykreslení jednotlivých objektů
 
-        ctx.beginPath();
-        ctx.roundRect(20, 20, 60, 40, 8);
-        ctx.fill();
-        ctx.restore(); // vrátí se k naposledy uloženému nastavené ctx
- // 2. Ball míček
-        ctx.save();
-        ctx.fillStyle = "grey";
-       
-        ctx.beginPath();
-        ctx.arc(
-            400,              // x
-            300,              // y
-            15,               // radius
-            0,                // začátek úhlu
-            Math.PI * 2       // konec úhlu = celý kruh
-        );
-        ctx.fill();
-        ctx.restore();
-        
-        // 3. Paddle pálka
-        ctx.save();
-        ctx.fillStyle = "blue";
+        function drawBrick(ctx: CanvasRenderingContext2D) {
+            const gradient = ctx.createLinearGradient(100, 100, 200, 130);
+            gradient.addColorStop(0, "#7bd6eb");
+            gradient.addColorStop(1, "#88f97c");
 
-        ctx.beginPath();
-        ctx.roundRect(
-            350,  // x
-            570,  // y
-            140,  // width
-            20,    // height
-            8 //radius
-        );
-        ctx.fill();
-        ctx.restore();
+            ctx.save(); //uloží aktuální nastavení ctx
+            ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.fillStyle = gradient;
 
-        // POZDĚJI SEM PŘIJDE GAME LOOP
+            ctx.beginPath();
+            ctx.roundRect(20, 20, 60, 40, 8);
+            ctx.fill();
+            ctx.restore(); // vrátí se k naposledy uloženému nastavené ctx
+        }
 
-        // function gameLoop() {
-        //     ...
-        //     requestAnimationFrame(gameLoop);
-        // }
+        function drawBall(ctx: CanvasRenderingContext2D) {
+            ctx.save();
+            ctx.fillStyle = "grey";
 
-        // gameLoop();
+            ctx.beginPath();
+            ctx.arc(
+                400,              // x
+                300,              // y
+                15,               // radius
+                0,                // začátek úhlu
+                Math.PI * 2       // konec úhlu = celý kruh
+            );
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawPaddle(ctx: CanvasRenderingContext2D) {
+            ctx.save();
+            ctx.fillStyle = "blue";
+
+            ctx.beginPath();
+            ctx.roundRect(
+                350,  // x
+                570,  // y
+                140,  // width
+                20,    // height
+                8 //radius
+            );
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Vykreslení objektů najednou
+        function draw(ctx: CanvasRenderingContext2D) {
+            // Vyčistí canvas před každým vykreslením 
+            ctx.clearRect(0, 0, canvas!.width, canvas!.height);
+            drawBrick(ctx);
+            drawBall(ctx);
+            drawPaddle(ctx);
+        }
+
+        // hlavní animační funkce
+        function gameLoop() { // TODO: později přidat update() pro pohyb a herní logiku 
+            draw(ctx!);
+            requestAnimationFrame(gameLoop);
+        } gameLoop();
+        // TODO: později přidat cleanup pro requestAnimationFrame
 
     }, []);
 
