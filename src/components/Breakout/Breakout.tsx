@@ -1,5 +1,7 @@
 import { useRef, useEffect } from "react";
 import "./Breakout.css"
+import type { Brick } from "../../types/gameTypes";
+import { GAME_LAYOUTS } from "./gameLayouts";
 
 export default function Breakout() {
 
@@ -7,11 +9,41 @@ export default function Breakout() {
     const BALL_RADIUS: number = 15;
     const PADDLE_WIDTH: number = 140;
     const PADDLE_HEIGHT: number = 20;
-    const BRICK_WIDTH: number = 60;
+    const BRICK_WIDTH: number = 77;
     const BRICK_HEIGHT: number = 40;
 
     let paddleX: number = 330;
     const PADDLE_SPEED: number = 6; // o kolik se má pálka posunout
+
+
+    // vytvoří array všech cihel podle layoutu (u každé dá x, y, width, height, alive)
+    function createBricks(layout: number[][]): Brick[] {
+        const bricks: Brick[] = [];
+
+        const brickWidth = BRICK_WIDTH;
+        const brickHeight = BRICK_HEIGHT;
+        const gap = 10;
+
+        const startX = 12;
+        const startY = 10;
+
+        layout.forEach((row, rowIndex) => {
+            row.forEach((cell, columnIndex) => {
+                if (cell === 1) {
+                    bricks.push({
+                        x: startX + columnIndex * (brickWidth + gap),
+                        y: startY + rowIndex * (brickHeight + gap),
+                        width: brickWidth,
+                        height: brickHeight,
+                        alive: true,
+                    });
+                }
+            });
+        });
+
+        return bricks;
+    }
+
 
     // vytvoření canvas ref, přes který se pak dostaneme k canvasRef.current, 
     // přes kterou se dostanem k Canvas API
@@ -28,23 +60,37 @@ export default function Breakout() {
 
 
         //-----Stav hry: údaje o polohách a kresbách jednotlivých prvků hry-----
+        // do const bricks uloží pole začátečních bricks podle náhodného layoutu
+        const bricks = createBricks(GAME_LAYOUTS[Math.floor(Math.random() * GAME_LAYOUTS.length)]);
 
-        function drawBrick(ctx: CanvasRenderingContext2D) {
-            const gradient = ctx.createLinearGradient(100, 100, 200, 130);
+        // Vykreslení všech cihel podle array bricks vytvořené pomocí createBricks
+        function drawBricks(ctx: CanvasRenderingContext2D) {
+            const gradient = ctx.createLinearGradient(250, 250, 200, 130);
             gradient.addColorStop(0, "#7bd6eb");
             gradient.addColorStop(1, "#88f97c");
 
-            ctx.save(); //uloží aktuální nastavení ctx
-            ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            ctx.fillStyle = gradient;
+            bricks.forEach((brick) => {
+                if (!brick.alive) return;
 
-            ctx.beginPath();
-            ctx.roundRect(20, 20, BRICK_WIDTH, BRICK_HEIGHT, 8);
-            ctx.fill();
-            ctx.restore(); // vrátí se k naposledy uloženému nastavené ctx
+                ctx.save(); //uloží aktuální nastavení ctx
+                ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+                ctx.fillStyle = gradient;
+
+                ctx.beginPath();
+                ctx.roundRect(
+                    brick.x,
+                    brick.y,
+                    brick.width,
+                    brick.height,
+                    8
+                );
+
+                ctx.fill();
+                ctx.restore(); // vrátí se k naposledy uloženému nastavené ctx
+            });
         }
 
         function drawBall(ctx: CanvasRenderingContext2D) {
@@ -146,13 +192,13 @@ export default function Breakout() {
         function draw(ctx: CanvasRenderingContext2D) {
             // Vyčistí canvas před každým vykreslením 
             ctx.clearRect(0, 0, canvas!.width, canvas!.height);
-            drawBrick(ctx);
+            drawBricks(ctx);
             drawBall(ctx);
             drawPaddle(ctx);
         }
 
         // -----hlavní animační funkce-----
-        function gameLoop() { 
+        function gameLoop() {
             update();
             draw(ctx!);
             requestAnimationFrame(gameLoop);
