@@ -210,6 +210,25 @@ export default function Breakout() {
             // pohyb míčku
             ballx += velocityX;
             bally += velocityY;
+
+            // kolize se stěnami
+            if (ballx - BALL_RADIUS <= 0) { //odraz o levou stěnu
+                velocityX *= -1;
+            }
+            if (ballx + BALL_RADIUS >= 800) { // odraz o pravou stěnu
+                velocityX *= -1;
+            }
+            if (bally - BALL_RADIUS <= 0) { // odraz horní části míčku o strop
+                velocityY *= -1;
+            }
+            if (bally + BALL_RADIUS >= 600) { // pád spodní části na zem
+                ballx = 400;
+                bally = 552;
+                velocityX = 0;
+                velocityY = 0
+            }
+                
+
         }
 
         // -----Vykreslení aktuálního Stavu hry-----
