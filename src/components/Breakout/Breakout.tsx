@@ -5,8 +5,8 @@ import { GAME_LAYOUTS } from "./gameLayouts";
 
 export default function Breakout() {
 
-    //-----Všechny konstanty k velikosti tvarů -----
-    const BALL_RADIUS: number = 15;
+    //-----Všechny proměnné a velikosti tvarů -----
+    const BALL_RADIUS: number = 16;
     const PADDLE_WIDTH: number = 140;
     const PADDLE_HEIGHT: number = 20;
     const BRICK_WIDTH: number = 77;
@@ -14,6 +14,14 @@ export default function Breakout() {
 
     let paddleX: number = 330;
     const PADDLE_SPEED: number = 6; // o kolik se má pálka posunout
+
+    let ballx: number = 400;
+    let bally: number = 552;
+    let angle: number = 0;
+    let velocityX: number = 0;
+    let velocityY: number = 0;
+    const BALL_SPEED: number = 6;
+
 
 
     // vytvoří array všech cihel podle layoutu (u každé dá x, y, width, height, alive)
@@ -49,7 +57,18 @@ export default function Breakout() {
     // přes kterou se dostanem k Canvas API
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    // vygeneruje počáteční úhel a rychlosti po ose x a y
+    function startGame() {
+        angle = Math.floor(Math.random() * -121) - 30;
+        const radians = angle * (Math.PI / 180); //převede úhel na radiány kvůli sin a cos
+        velocityX = Math.cos(radians) * BALL_SPEED;
+        velocityY = Math.sin(radians) * BALL_SPEED;
+    };
+
+
+
     useEffect(() => {
+
         const canvas = canvasRef.current; // dostaneme skutečný <canvas> element
 
         if (!canvas) return; //ukončit, kdyby canvas z nějakého důvodu neexistoval
@@ -99,8 +118,8 @@ export default function Breakout() {
 
             ctx.beginPath();
             ctx.arc(
-                400,              // x
-                300,              // y
+                ballx,              // x
+                bally,              // y
                 BALL_RADIUS,               // radius
                 0,                // začátek úhlu
                 Math.PI * 2       // konec úhlu = celý kruh
@@ -171,6 +190,7 @@ export default function Breakout() {
 
 
 
+
         // -----Vše co mení Stav hry -----
         function update() {
 
@@ -178,7 +198,6 @@ export default function Breakout() {
             if (keys.ArrowLeft) {
                 paddleX -= PADDLE_SPEED;
             }
-
             if (keys.ArrowRight) {
                 paddleX += PADDLE_SPEED;
             }
@@ -186,6 +205,11 @@ export default function Breakout() {
                 0,
                 Math.min(paddleX, canvas!.width - PADDLE_WIDTH)
             );
+
+
+            // pohyb míčku
+            ballx += velocityX;
+            bally += velocityY;
         }
 
         // -----Vykreslení aktuálního Stavu hry-----
@@ -216,7 +240,7 @@ export default function Breakout() {
             <canvas ref={canvasRef} width={800}
                 height={600} />
 
-            <button>Start game</button>
+            <button onClick={startGame}>Start game</button>
         </div>
     );
 }
