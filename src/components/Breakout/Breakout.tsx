@@ -13,14 +13,16 @@ export default function Breakout() {
     const BRICK_HEIGHT: number = 40;
 
     let paddleX: number = 330;
+    let paddleY: number = 570;
     const PADDLE_SPEED: number = 6; // o kolik se má pálka posunout
 
-    let ballx: number = 400;
+    let ballx: number = 395;
     let bally: number = 552;
     let angle: number = 0;
     let velocityX: number = 0;
     let velocityY: number = 0;
     const BALL_SPEED: number = 6;
+    const MAX_BOUNCE_ANGLE:number = 60;
 
 
 
@@ -135,7 +137,7 @@ export default function Breakout() {
             ctx.beginPath();
             ctx.roundRect(
                 paddleX,  // x
-                570,  // y
+                paddleY,  // y
                 PADDLE_WIDTH,  // width
                 PADDLE_HEIGHT,    // height
                 8 //radius
@@ -222,12 +224,34 @@ export default function Breakout() {
                 velocityY *= -1;
             }
             if (bally + BALL_RADIUS >= 600) { // pád spodní části na zem
-                ballx = 400;
+                ballx = 395;
                 bally = 552;
                 velocityX = 0;
                 velocityY = 0
             }
-                
+
+            //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
+            if (
+                bally + BALL_RADIUS >= paddleY &&
+                ballx >= paddleX &&
+                ballx <= paddleX + PADDLE_WIDTH &&
+                velocityY > 0
+            ) {
+                const hitPosition =
+                    ballx - (paddleX + PADDLE_WIDTH / 2);
+
+                const normalizedHitPosition =
+                    hitPosition / (PADDLE_WIDTH / 2);
+
+                const angle =
+                    normalizedHitPosition * MAX_BOUNCE_ANGLE;
+
+                const radians = angle * (Math.PI / 180);
+
+                velocityX = Math.sin(radians) * BALL_SPEED;
+                velocityY = -Math.cos(radians) * BALL_SPEED; // - aby 0 znamenala nahoru a ne do prava
+            }
+
 
         }
 
