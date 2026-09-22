@@ -5,3 +5,17 @@ export type Brick = {
     height: number;
     alive: boolean;
 };
+export type Ball = {
+  x: number;
+  y: number;
+  radius: number;
+  velocityX: number;
+  velocityY: number;
+};
+
+export type Paddle = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};

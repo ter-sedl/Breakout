@@ -1,37 +1,39 @@
 import { useRef, useEffect } from "react";
 import "./Breakout.css"
-import type { Brick } from "../../types/gameTypes";
+import type { Brick, Ball, Paddle } from "../../types/gameTypes";
 import { GAME_LAYOUTS } from "./gameLayouts";
 
 export default function Breakout() {
 
     //-----Všechny proměnné a velikosti tvarů -----
-    const BALL_RADIUS: number = 16;
-    const PADDLE_WIDTH: number = 140;
-    const PADDLE_HEIGHT: number = 20;
+    const BALL_SPEED = 5;
+    const MAX_BOUNCE_ANGLE = 60;
+    
+    const PADDLE_SPEED = 7;
+
     const BRICK_WIDTH: number = 77;
     const BRICK_HEIGHT: number = 40;
-
-    let paddleX: number = 330;
-    let paddleY: number = 570;
-    const PADDLE_SPEED: number = 6; // o kolik se má pálka posunout
-
-    let ballx: number = 395;
-    let bally: number = 552;
+    
+    const ball: Ball = {
+        x: 395,
+        y: 300,
+        radius: 16,
+        velocityX: 0,
+        velocityY: 0,
+    };
     let angle: number = 0;
-    let velocityX: number = 0;
-    let velocityY: number = 0;
-    const BALL_SPEED: number = 6;
-    const MAX_BOUNCE_ANGLE:number = 60;
 
-
+    const paddle: Paddle = {
+        x: 330,
+        y: 570,
+        width: 140,
+        height: 20,
+    };
 
     // vytvoří array všech cihel podle layoutu (u každé dá x, y, width, height, alive)
     function createBricks(layout: number[][]): Brick[] {
         const bricks: Brick[] = [];
 
-        const brickWidth = BRICK_WIDTH;
-        const brickHeight = BRICK_HEIGHT;
         const gap = 10;
 
         const startX = 12;
@@ -41,10 +43,10 @@ export default function Breakout() {
             row.forEach((cell, columnIndex) => {
                 if (cell === 1) {
                     bricks.push({
-                        x: startX + columnIndex * (brickWidth + gap),
-                        y: startY + rowIndex * (brickHeight + gap),
-                        width: brickWidth,
-                        height: brickHeight,
+                        x: startX + columnIndex * (BRICK_WIDTH + gap),
+                        y: startY + rowIndex * (BRICK_HEIGHT + gap),
+                        width: BRICK_WIDTH,
+                        height: BRICK_HEIGHT,
                         alive: true,
                     });
                 }
@@ -63,8 +65,8 @@ export default function Breakout() {
     function startGame() {
         angle = Math.floor(Math.random() * -121) - 30;
         const radians = angle * (Math.PI / 180); //převede úhel na radiány kvůli sin a cos
-        velocityX = Math.cos(radians) * BALL_SPEED;
-        velocityY = Math.sin(radians) * BALL_SPEED;
+        ball.velocityX = Math.cos(radians) * BALL_SPEED;
+        ball.velocityY = Math.sin(radians) * BALL_SPEED;
     };
 
 
@@ -120,9 +122,9 @@ export default function Breakout() {
 
             ctx.beginPath();
             ctx.arc(
-                ballx,              // x
-                bally,              // y
-                BALL_RADIUS,               // radius
+                ball.x,              // x
+                ball.y,              // y
+                ball.radius,               // radius
                 0,                // začátek úhlu
                 Math.PI * 2       // konec úhlu = celý kruh
             );
@@ -136,10 +138,10 @@ export default function Breakout() {
 
             ctx.beginPath();
             ctx.roundRect(
-                paddleX,  // x
-                paddleY,  // y
-                PADDLE_WIDTH,  // width
-                PADDLE_HEIGHT,    // height
+                paddle.x,  // x
+                paddle.y,  // y
+                paddle.width,  // width
+                paddle.height,    // height
                 8 //radius
             );
             ctx.fill();
@@ -177,11 +179,11 @@ export default function Breakout() {
             const scaleX = canvas.width / canvas.clientWidth;
             const mouseX = e.offsetX * scaleX;
 
-            paddleX = Math.max( // rozmezí x souřadnice může být jen v rozmezí šířky, ať zastaví o stěnu
+            paddle.x = Math.max( // rozmezí x souřadnice může být jen v rozmezí šířky, ať zastaví o stěnu
                 0,
                 Math.min(
-                    mouseX - PADDLE_WIDTH / 2,
-                    canvas.width - PADDLE_WIDTH
+                    mouseX - paddle.width / 2,
+                    canvas.width - paddle.width
                 )
             );
         })
@@ -198,58 +200,58 @@ export default function Breakout() {
 
             // pohyb pálkou pomocí šipek
             if (keys.ArrowLeft) {
-                paddleX -= PADDLE_SPEED;
+                paddle.x -= PADDLE_SPEED;
             }
             if (keys.ArrowRight) {
-                paddleX += PADDLE_SPEED;
+                paddle.x += PADDLE_SPEED;
             }
-            paddleX = Math.max(
+            paddle.x = Math.max(
                 0,
-                Math.min(paddleX, canvas!.width - PADDLE_WIDTH)
+                Math.min(paddle.x, canvas!.width - paddle.width)
             );
 
 
             // pohyb míčku
-            ballx += velocityX;
-            bally += velocityY;
+            ball.x += ball.velocityX;
+            ball.y += ball.velocityY;
 
             // kolize se stěnami
-            if (ballx - BALL_RADIUS <= 0) { //odraz o levou stěnu
-                velocityX *= -1;
+            if (ball.x - ball.radius <= 0) { //odraz o levou stěnu
+                ball.velocityX *= -1;
             }
-            if (ballx + BALL_RADIUS >= 800) { // odraz o pravou stěnu
-                velocityX *= -1;
+            if (ball.x + ball.radius >= 800) { // odraz o pravou stěnu
+                ball.velocityX *= -1;
             }
-            if (bally - BALL_RADIUS <= 0) { // odraz horní části míčku o strop
-                velocityY *= -1;
+            if (ball.y - ball.radius <= 0) { // odraz horní části míčku o strop
+                ball.velocityY *= -1;
             }
-            if (bally + BALL_RADIUS >= 600) { // pád spodní části na zem
-                ballx = 395;
-                bally = 552;
-                velocityX = 0;
-                velocityY = 0
+            if (ball.y + ball.radius >= 600) { // pád spodní části na zem
+                ball.x = 395;
+                ball.y = 552;
+                ball.velocityX = 0;
+                ball.velocityY = 0
             }
 
             //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
             if (
-                bally + BALL_RADIUS >= paddleY &&
-                ballx >= paddleX &&
-                ballx <= paddleX + PADDLE_WIDTH &&
-                velocityY > 0
+                ball.y + ball.radius >= paddle.y &&
+                ball.x >= paddle.x &&
+                ball.x <= paddle.x + paddle.width &&
+                ball.velocityY > 0
             ) {
                 const hitPosition =
-                    ballx - (paddleX + PADDLE_WIDTH / 2);
+                    ball.x - (paddle.x + paddle.width / 2);
 
                 const normalizedHitPosition =
-                    hitPosition / (PADDLE_WIDTH / 2);
+                    hitPosition / (paddle.width / 2);
 
                 const angle =
                     normalizedHitPosition * MAX_BOUNCE_ANGLE;
 
                 const radians = angle * (Math.PI / 180);
 
-                velocityX = Math.sin(radians) * BALL_SPEED;
-                velocityY = -Math.cos(radians) * BALL_SPEED; // - aby 0 znamenala nahoru a ne do prava
+                ball.velocityX = Math.sin(radians) * BALL_SPEED;
+                ball.velocityY = -Math.cos(radians) * BALL_SPEED; // - aby 0 znamenala nahoru a ne do prava
             }
 
 
