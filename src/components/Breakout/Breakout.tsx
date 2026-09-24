@@ -6,10 +6,10 @@ import { GAME_LAYOUTS } from "./gameLayouts";
 export default function Breakout() {
 
     //-----Všechny proměnné a velikosti tvarů -----
-    const BALL_SPEED = 5;
+    const BALL_SPEED = 8;
     const MAX_BOUNCE_ANGLE = 60;
 
-    const PADDLE_SPEED = 7;
+    const PADDLE_SPEED = 8;
 
     const BRICK_WIDTH: number = 77;
     const BRICK_HEIGHT: number = 40;
@@ -88,7 +88,6 @@ export default function Breakout() {
         // do const bricks uloží pole začátečních bricks podle náhodného layoutu
 
         const bricks = createBricks(GAME_LAYOUTS[Math.floor(Math.random() * GAME_LAYOUTS.length)]);
-        console.log("create bricks", bricks);
 
         let animationId: number;
 
@@ -139,6 +138,21 @@ export default function Breakout() {
                         ballTop < brick.y + BRICK_HEIGHT
                     ) {
                         brick.alive = false;
+                        
+                        // Narazil do horní / spodní strany
+                        if (
+                            ball.y - ball.velocityY + ball.radius <= brick.y ||
+                            ball.y - ball.velocityY - ball.radius >= brick.y + BRICK_HEIGHT
+                        ) {
+                            ball.velocityY *= -1;
+                        }
+                        
+                        // Narazil do levé / pravé strany
+                        else {
+                            ball.velocityX *= -1;
+                        }
+                        
+                        break;
                     };
                 }
             }
@@ -307,7 +321,6 @@ export default function Breakout() {
         gameLoop();
         // TODO: později přidat cleanup pro requestAnimationFrame
         return () => {
-            console.log("cleanup");
             cancelAnimationFrame(animationId);
         };
 
