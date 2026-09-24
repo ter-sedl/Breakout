@@ -86,7 +86,12 @@ export default function Breakout() {
 
         //-----Stav hry: údaje o polohách a kresbách jednotlivých prvků hry-----
         // do const bricks uloží pole začátečních bricks podle náhodného layoutu
+
         const bricks = createBricks(GAME_LAYOUTS[Math.floor(Math.random() * GAME_LAYOUTS.length)]);
+        console.log("create bricks", bricks);
+
+        let animationId: number;
+
 
         // Vykreslení všech cihel podle array bricks vytvořené pomocí createBricks
         function drawBricks(ctx: CanvasRenderingContext2D) {
@@ -134,7 +139,6 @@ export default function Breakout() {
                         ballTop < brick.y + BRICK_HEIGHT
                     ) {
                         brick.alive = false;
-
                     };
                 }
             }
@@ -236,12 +240,11 @@ export default function Breakout() {
             );
 
 
-            checkBrickCollision();
             // pohyb míčku
-
+            
             ball.x += ball.velocityX;
             ball.y += ball.velocityY;
-
+            
             // kolize se stěnami
             if (ball.x - ball.radius <= 0) { //odraz o levou stěnu
                 ball.velocityX *= -1;
@@ -258,7 +261,8 @@ export default function Breakout() {
                 ball.velocityX = 0;
                 ball.velocityY = 0
             }
-
+            
+            checkBrickCollision();
 
             //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
             if (
@@ -298,9 +302,14 @@ export default function Breakout() {
         function gameLoop() {
             update();
             draw(ctx!);
-            requestAnimationFrame(gameLoop);
-        } gameLoop();
+            animationId = requestAnimationFrame(gameLoop);
+        } 
+        gameLoop();
         // TODO: později přidat cleanup pro requestAnimationFrame
+        return () => {
+            console.log("cleanup");
+            cancelAnimationFrame(animationId);
+        };
 
     }, []);
 
