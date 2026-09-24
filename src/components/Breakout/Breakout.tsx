@@ -8,20 +8,22 @@ export default function Breakout() {
     //-----Všechny proměnné a velikosti tvarů -----
     const BALL_SPEED = 5;
     const MAX_BOUNCE_ANGLE = 60;
-    
+
     const PADDLE_SPEED = 7;
 
     const BRICK_WIDTH: number = 77;
     const BRICK_HEIGHT: number = 40;
-    
+
+
     const ball: Ball = {
         x: 395,
-        y: 300,
+        y: 552,
         radius: 16,
         velocityX: 0,
         velocityY: 0,
     };
     let angle: number = 0;
+
 
     const paddle: Paddle = {
         x: 330,
@@ -115,6 +117,29 @@ export default function Breakout() {
                 ctx.restore(); // vrátí se k naposledy uloženému nastavené ctx
             });
         }
+
+        function checkBrickCollision() {
+            for (const brick of bricks) {
+                const ballLeft = ball.x - ball.radius;
+                const ballRight = ball.x + ball.radius;
+                const ballTop = ball.y - ball.radius;
+                const ballBottom = ball.y + ball.radius;
+
+
+                if (brick.alive === true) {
+                    if (
+                        ballRight > brick.x &&
+                        ballLeft < brick.x + BRICK_WIDTH &&
+                        ballBottom > brick.y &&
+                        ballTop < brick.y + BRICK_HEIGHT
+                    ) {
+                        brick.alive = false;
+
+                    };
+                }
+            }
+        }
+
 
         function drawBall(ctx: CanvasRenderingContext2D) {
             ctx.save();
@@ -211,7 +236,9 @@ export default function Breakout() {
             );
 
 
+            checkBrickCollision();
             // pohyb míčku
+
             ball.x += ball.velocityX;
             ball.y += ball.velocityY;
 
@@ -231,6 +258,7 @@ export default function Breakout() {
                 ball.velocityX = 0;
                 ball.velocityY = 0
             }
+
 
             //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
             if (
