@@ -19,3 +19,4 @@ export type Paddle = {
   width: number;
   height: number;
 };
+export type GameResult = "" | "won" | "lost";

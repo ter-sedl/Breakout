@@ -1,9 +1,12 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import "./Breakout.css"
-import type { Brick, Ball, Paddle } from "../../types/gameTypes";
+import type { Brick, Ball, Paddle, GameResult } from "../../types/gameTypes";
 import { GAME_LAYOUTS } from "./gameLayouts";
 
 export default function Breakout() {
+
+    const [gameResult, setGameResult] = useState<GameResult>("");
+
 
     //-----Všechny proměnné a velikosti tvarů -----
     const BALL_SPEED = 8;
@@ -138,7 +141,7 @@ export default function Breakout() {
                         ballTop < brick.y + BRICK_HEIGHT
                     ) {
                         brick.alive = false;
-                        
+
                         // Narazil do horní / spodní strany
                         if (
                             ball.y - ball.velocityY + ball.radius <= brick.y ||
@@ -146,15 +149,18 @@ export default function Breakout() {
                         ) {
                             ball.velocityY *= -1;
                         }
-                        
+
                         // Narazil do levé / pravé strany
                         else {
                             ball.velocityX *= -1;
                         }
-                        
+
                         break;
                     };
                 }
+            }
+            if (!bricks.find((brick) => brick.alive)) {
+                setGameResult("won");
             }
         }
 
@@ -255,10 +261,10 @@ export default function Breakout() {
 
 
             // pohyb míčku
-            
+
             ball.x += ball.velocityX;
             ball.y += ball.velocityY;
-            
+
             // kolize se stěnami
             if (ball.x - ball.radius <= 0) { //odraz o levou stěnu
                 ball.velocityX *= -1;
@@ -273,9 +279,10 @@ export default function Breakout() {
                 ball.x = 395;
                 ball.y = 552;
                 ball.velocityX = 0;
-                ball.velocityY = 0
+                ball.velocityY = 0;
+                setGameResult("lost")
             }
-            
+
             checkBrickCollision();
 
             //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
@@ -317,19 +324,25 @@ export default function Breakout() {
             update();
             draw(ctx!);
             animationId = requestAnimationFrame(gameLoop);
-        } 
+        }
         gameLoop();
         // TODO: později přidat cleanup pro requestAnimationFrame
         return () => {
             cancelAnimationFrame(animationId);
         };
 
-    }, []);
+    }, [gameResult]);
 
     return (
         <div className="breakout">
             <h1>Breakout</h1>
-            <h2>Destroy all the bricks!</h2>
+            <h2>
+                {gameResult === "won"
+                    ? "You won"
+                    : gameResult === "lost"
+                        ? "You lost"
+                        : "Play"}
+            </h2>
 
             {/* v budoucnu si dát si pozor na canvas.width vs canvas.clinetWidth */}
             <canvas ref={canvasRef} width={800}
