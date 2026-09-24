@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState } from "react";
 import "./Breakout.css"
-import type { Brick, Ball, Paddle, GameResult } from "../../types/gameTypes";
+import type { Brick, Ball, Paddle, GameResult, GameStatus } from "../../types/gameTypes";
 import { GAME_LAYOUTS } from "./gameLayouts";
 
 export default function Breakout() {
 
     const [gameResult, setGameResult] = useState<GameResult>("");
-
+    const [gameStatus, setGameStatus] = useState<GameStatus>("start");
+    const [restartGame, setRestartGame] = useState(false);
 
     //-----Všechny proměnné a velikosti tvarů -----
     const BALL_SPEED = 8;
@@ -18,13 +19,13 @@ export default function Breakout() {
     const BRICK_HEIGHT: number = 40;
 
 
-    const ball: Ball = {
+    const ball = useRef<Ball>({
         x: 395,
         y: 552,
         radius: 16,
         velocityX: 0,
         velocityY: 0,
-    };
+    });
     let angle: number = 0;
 
 
@@ -70,13 +71,22 @@ export default function Breakout() {
     function startGame() {
         angle = Math.floor(Math.random() * -121) - 30;
         const radians = angle * (Math.PI / 180); //převede úhel na radiány kvůli sin a cos
-        ball.velocityX = Math.cos(radians) * BALL_SPEED;
-        ball.velocityY = Math.sin(radians) * BALL_SPEED;
+        ball.current.velocityX = Math.cos(radians) * BALL_SPEED;
+        ball.current.velocityY = Math.sin(radians) * BALL_SPEED;
+        setGameStatus("playing");
+    };
+
+    // změní restartGame, který je dependency pro useEffect
+    function gameRestarter() {
+        setRestartGame(game => !game)
     };
 
 
 
     useEffect(() => {
+
+        setGameStatus("start");
+        setGameResult("");
 
         const canvas = canvasRef.current; // dostaneme skutečný <canvas> element
 
@@ -86,14 +96,11 @@ export default function Breakout() {
 
         if (!ctx) return; // ukončit, kdyby se kontext nepodařilo získat, kvůli TS narrowiungu do fncí zbytežné a potřeba znova definovat
 
+        let animationId: number;
 
         //-----Stav hry: údaje o polohách a kresbách jednotlivých prvků hry-----
         // do const bricks uloží pole začátečních bricks podle náhodného layoutu
-
         const bricks = createBricks(GAME_LAYOUTS[Math.floor(Math.random() * GAME_LAYOUTS.length)]);
-
-        let animationId: number;
-
 
         // Vykreslení všech cihel podle array bricks vytvořené pomocí createBricks
         function drawBricks(ctx: CanvasRenderingContext2D) {
@@ -127,10 +134,10 @@ export default function Breakout() {
 
         function checkBrickCollision() {
             for (const brick of bricks) {
-                const ballLeft = ball.x - ball.radius;
-                const ballRight = ball.x + ball.radius;
-                const ballTop = ball.y - ball.radius;
-                const ballBottom = ball.y + ball.radius;
+                const ballLeft = ball.current.x - ball.current.radius;
+                const ballRight = ball.current.x + ball.current.radius;
+                const ballTop = ball.current.y - ball.current.radius;
+                const ballBottom = ball.current.y + ball.current.radius;
 
 
                 if (brick.alive === true) {
@@ -144,23 +151,29 @@ export default function Breakout() {
 
                         // Narazil do horní / spodní strany
                         if (
-                            ball.y - ball.velocityY + ball.radius <= brick.y ||
-                            ball.y - ball.velocityY - ball.radius >= brick.y + BRICK_HEIGHT
+                            ball.current.y - ball.current.velocityY + ball.current.radius <= brick.y ||
+                            ball.current.y - ball.current.velocityY - ball.current.radius >= brick.y + BRICK_HEIGHT
                         ) {
-                            ball.velocityY *= -1;
+                            ball.current.velocityY *= -1;
                         }
 
                         // Narazil do levé / pravé strany
                         else {
-                            ball.velocityX *= -1;
+                            ball.current.velocityX *= -1;
                         }
 
                         break;
                     };
                 }
             }
+            // konec hry při rozbití všech cihel
             if (!bricks.find((brick) => brick.alive)) {
+                ball.current.x = 395;
+                ball.current.y = 552;
+                ball.current.velocityX = 0;
+                ball.current.velocityY = 0;
                 setGameResult("won");
+                setGameStatus("finished")
             }
         }
 
@@ -171,9 +184,9 @@ export default function Breakout() {
 
             ctx.beginPath();
             ctx.arc(
-                ball.x,              // x
-                ball.y,              // y
-                ball.radius,               // radius
+                ball.current.x,              // x
+                ball.current.y,              // y
+                ball.current.radius,               // radius
                 0,                // začátek úhlu
                 Math.PI * 2       // konec úhlu = celý kruh
             );
@@ -241,9 +254,6 @@ export default function Breakout() {
         window.addEventListener("keyup", handleKeyUp);
 
 
-
-
-
         // -----Vše co mení Stav hry -----
         function update() {
 
@@ -259,41 +269,40 @@ export default function Breakout() {
                 Math.min(paddle.x, canvas!.width - paddle.width)
             );
 
-
             // pohyb míčku
-
-            ball.x += ball.velocityX;
-            ball.y += ball.velocityY;
+            ball.current.x += ball.current.velocityX;
+            ball.current.y += ball.current.velocityY;
 
             // kolize se stěnami
-            if (ball.x - ball.radius <= 0) { //odraz o levou stěnu
-                ball.velocityX *= -1;
+            if (ball.current.x - ball.current.radius <= 0) { //odraz o levou stěnu
+                ball.current.velocityX *= -1;
             }
-            if (ball.x + ball.radius >= 800) { // odraz o pravou stěnu
-                ball.velocityX *= -1;
+            if (ball.current.x + ball.current.radius >= 800) { // odraz o pravou stěnu
+                ball.current.velocityX *= -1;
             }
-            if (ball.y - ball.radius <= 0) { // odraz horní části míčku o strop
-                ball.velocityY *= -1;
+            if (ball.current.y - ball.current.radius <= 0) { // odraz horní části míčku o strop
+                ball.current.velocityY *= -1;
             }
-            if (ball.y + ball.radius >= 600) { // pád spodní části na zem
-                ball.x = 395;
-                ball.y = 552;
-                ball.velocityX = 0;
-                ball.velocityY = 0;
-                setGameResult("lost")
+            if (ball.current.y + ball.current.radius >= 600) { // pád spodní části na zem
+                ball.current.x = 395;
+                ball.current.y = 552;
+                ball.current.velocityX = 0;
+                ball.current.velocityY = 0;
+                setGameResult("lost");
+                setGameStatus("finished")
             }
 
             checkBrickCollision();
 
             //kolize s pálkou, úhel odrazu podle toho, jak daleko od středu se odrazil
             if (
-                ball.y + ball.radius >= paddle.y &&
-                ball.x >= paddle.x &&
-                ball.x <= paddle.x + paddle.width &&
-                ball.velocityY > 0
+                ball.current.y + ball.current.radius >= paddle.y &&
+                ball.current.x >= paddle.x &&
+                ball.current.x <= paddle.x + paddle.width &&
+                ball.current.velocityY > 0
             ) {
                 const hitPosition =
-                    ball.x - (paddle.x + paddle.width / 2);
+                    ball.current.x - (paddle.x + paddle.width / 2);
 
                 const normalizedHitPosition =
                     hitPosition / (paddle.width / 2);
@@ -303,11 +312,9 @@ export default function Breakout() {
 
                 const radians = angle * (Math.PI / 180);
 
-                ball.velocityX = Math.sin(radians) * BALL_SPEED;
-                ball.velocityY = -Math.cos(radians) * BALL_SPEED; // - aby 0 znamenala nahoru a ne do prava
+                ball.current.velocityX = Math.sin(radians) * BALL_SPEED;
+                ball.current.velocityY = -Math.cos(radians) * BALL_SPEED; // - aby 0 znamenala nahoru a ne do prava
             }
-
-
         }
 
         // -----Vykreslení aktuálního Stavu hry-----
@@ -326,12 +333,11 @@ export default function Breakout() {
             animationId = requestAnimationFrame(gameLoop);
         }
         gameLoop();
-        // TODO: později přidat cleanup pro requestAnimationFrame
         return () => {
             cancelAnimationFrame(animationId);
         };
 
-    }, [gameResult]);
+    }, [restartGame]);
 
     return (
         <div className="breakout">
@@ -348,7 +354,17 @@ export default function Breakout() {
             <canvas ref={canvasRef} width={800}
                 height={600} />
 
-            <button onClick={startGame}>Start game</button>
+            <button onClick={gameStatus === "start"
+                ? startGame
+                : gameStatus === "playing"
+                    ? startGame
+                    : gameRestarter}>
+                {gameStatus === "start"
+                    ? "Start game"
+                    : gameStatus === "playing"
+                        ? "Enjoy"
+                        : "Again"}
+            </button>
         </div>
     );
 }

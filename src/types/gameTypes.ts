@@ -20,3 +20,5 @@ export type Paddle = {
   height: number;
 };
 export type GameResult = "" | "won" | "lost";
+
+export type GameStatus = "start" | "playing" | "finished";
