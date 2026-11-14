@@ -1,1 +1,1 @@
-Vlastní responsivní projekt Breakout
+Originální prototyp Breakout. Takhle byla hra postupně vyvíjena. Následně byla použita a upravena v portfoliu.
